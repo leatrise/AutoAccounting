@@ -897,6 +897,8 @@
     <string name="setting_ocr_back_tap_trigger_summary">Double-tap device back triggers OCR when not using Xposed; may not work without accelerometer plus gyroscope</string>
     <string name="setting_ocr_accessibility_auto_trigger">Auto-trigger OCR on page switch</string>
     <string name="setting_ocr_accessibility_auto_trigger_summary">When OCR mode uses accessibility authorization, auto-trigger OCR when switching to remembered pages</string>
+    <string name="setting_ocr_accessibility_page_data">Use accessibility for page data</string>
+    <string name="setting_ocr_accessibility_page_data_summary">Prefer accessibility text in OCR flow; fall back to screenshot OCR when disabled or unavailable</string>
 
     <!-- Common strings -->
     <string name="clearing">Clearing...</string>

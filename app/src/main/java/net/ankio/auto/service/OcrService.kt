@@ -293,6 +293,16 @@ class OcrService : ICoreService() {
     private suspend fun performOcrCapture(useVision: Boolean): String? {
         val captureStartTime = System.currentTimeMillis()
 
+        // 无障碍文本优先（仅规则模式，视觉识别仍需截图）
+        if (!useVision && PrefManager.ocrAccessibilityPageData) {
+            runCatching {
+                OcrTools.collectPageText()
+            }.getOrNull()?.takeIf { it.isNotBlank() }?.let { pageText ->
+                Logger.d("Accessibility page text length: ${pageText.length}")
+                return pageText
+            }
+        }
+
         // 截图输出路径
         val outFile = File(coreService.externalCacheDir, "screen.png")
         if (outFile.exists()) outFile.delete()

@@ -398,6 +398,14 @@ object PrefManager {
         )
         set(value) = putBoolean(Setting.OCR_ACCESSIBILITY_AUTO_TRIGGER, value)
 
+    /** OCR 流程中优先使用无障碍页面文本 */
+    var ocrAccessibilityPageData: Boolean
+        get() = getBoolean(
+            Setting.OCR_ACCESSIBILITY_PAGE_DATA,
+            DefaultData.OCR_ACCESSIBILITY_PAGE_DATA
+        )
+        set(value) = putBoolean(Setting.OCR_ACCESSIBILITY_PAGE_DATA, value)
+
     /** 是否在OCR识别期间显示动画悬浮窗 */
     var ocrShowAnimation: Boolean
         get() = getBoolean(Setting.OCR_SHOW_ANIMATION, DefaultData.OCR_SHOW_ANIMATION)

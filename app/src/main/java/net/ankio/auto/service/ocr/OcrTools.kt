@@ -75,6 +75,12 @@ object OcrTools {
         }
     }
 
+    /** 读取当前页面文本（无障碍树） */
+    suspend fun collectPageText(maxDepth: Int = 50): String? = withContext(Dispatchers.Default) {
+        val service = SelectToSpeakService.instance ?: return@withContext null
+        service.collectPageText(maxDepth)
+    }
+
     private fun saveBitmap(bitmap: Bitmap, file: File): Boolean = try {
         FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         true

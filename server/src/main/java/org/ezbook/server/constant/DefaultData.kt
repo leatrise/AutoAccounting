@@ -84,6 +84,7 @@ object DefaultData {
     // -------- OCR识别 --------
     val OCR_BACK_TAP_TRIGGER: Boolean = true                     // 双击背部触发 OCR 默认开启
     val OCR_ACCESSIBILITY_AUTO_TRIGGER: Boolean = true               // 无障碍模式下页面切换自动触发默认开启
+    val OCR_ACCESSIBILITY_PAGE_DATA: Boolean = false                 // OCR流程优先使用无障碍页面文本默认关闭
     val OCR_SHOW_ANIMATION: Boolean = true                          // OCR识别时显示动画默认开启
     val OCR_ACCESSIBILITY_KEEP_ALIVE: Boolean = false             // 常驻后台识别默认开启
 

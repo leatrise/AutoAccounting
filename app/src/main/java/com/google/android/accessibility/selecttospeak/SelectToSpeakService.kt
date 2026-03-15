@@ -333,7 +333,7 @@ class SelectToSpeakService : AccessibilityService() {
      * 2. 专项处理 WebView：findAccessibilityNodeInfosByText 对 WebView 无效，需先递归找出 WebView 节点再遍历其子控件
      * 3. WebView 子控件无 ID，只能获取 contentDescription 等有限信息；加载完成后可获取包括屏幕外在内的全部内容
      */
-    private fun collectPageText(maxDepth: Int): String {
+    fun collectPageText(maxDepth: Int): String {
         val root = rootInActiveWindow
         if (root == null) {
             Logger.d("rootInActiveWindow is null, cannot collect page text")

@@ -187,6 +187,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
                 // OCR识别
                 "ocrBackTapTrigger" -> PrefManager.ocrBackTapTrigger
                 "ocrAccessibilityAutoTrigger" -> PrefManager.ocrAccessibilityAutoTrigger
+                "ocrAccessibilityPageData" -> PrefManager.ocrAccessibilityPageData
                 "ocrShowAnimation" -> PrefManager.ocrShowAnimation
                 "ocrAccessibilityKeepAlive" -> PrefManager.ocrAccessibilityKeepAlive
                 // 弹窗风格
@@ -210,6 +211,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
                 // OCR识别
                 "ocrBackTapTrigger" -> PrefManager.ocrBackTapTrigger = value
                 "ocrAccessibilityAutoTrigger" -> PrefManager.ocrAccessibilityAutoTrigger = value
+                "ocrAccessibilityPageData" -> PrefManager.ocrAccessibilityPageData = value
                 "ocrShowAnimation" -> PrefManager.ocrShowAnimation = value
                 "ocrAccessibilityKeepAlive" -> PrefManager.ocrAccessibilityKeepAlive = value
                 // 弹窗风格

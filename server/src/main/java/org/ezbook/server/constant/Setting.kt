@@ -89,6 +89,8 @@ object Setting {
     const val OCR_BACK_TAP_TRIGGER: String = "ocr_flip_trigger"
     const val OCR_ACCESSIBILITY_AUTO_TRIGGER: String =
         "ocr_accessibility_auto_trigger"  // 无障碍模式下页面切换自动触发
+    const val OCR_ACCESSIBILITY_PAGE_DATA: String =
+        "ocr_accessibility_page_data"  // OCR流程优先使用无障碍页面文本
     const val OCR_SHOW_ANIMATION: String = "ocr_show_animation"    // OCR识别时显示动画
     const val OCR_ACCESSIBILITY_KEEP_ALIVE: String =
         "ocr_accessibility_keep_alive"  // 常驻后台识别，关闭后OCR结束即停止无障碍
