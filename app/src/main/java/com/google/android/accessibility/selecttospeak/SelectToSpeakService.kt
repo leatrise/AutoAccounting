@@ -371,7 +371,7 @@ class SelectToSpeakService : AccessibilityService() {
             node.text?.toString()?.takeIf { it.isNotBlank() }?.let { texts.add(it) }
             node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { texts.add(it) }
         }
-        return texts.filter { it.isNotBlank() }.joinToString(",")
+        return texts.filter { it.isNotBlank() }.joinToString(", ")
     }
 
     /**
@@ -405,7 +405,7 @@ class SelectToSpeakService : AccessibilityService() {
             node.text?.toString()?.takeIf { it.isNotBlank() }?.let { texts.add(it) }
             node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { texts.add(it) }
         }
-        return texts.filter { it.isNotBlank() }.joinToString(",")
+        return texts.filter { it.isNotBlank() }.joinToString(", ")
     }
 
     override fun onInterrupt() {
