@@ -1,4 +1,13 @@
-import java.util.Calendar
+val releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+val hasReleaseSigning = listOf(
+    releaseKeystorePath,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() }
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -55,13 +64,23 @@ android {
     namespace = "net.ankio.auto"
     compileSdk = 36
 
+    signingConfigs {
+        create("ciRelease") {
+            if (hasReleaseSigning) {
+                storeFile = file(releaseKeystorePath!!)
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "net.ankio.auto"
         minSdk = 29
         targetSdk = 36
         versionCode = calculateVersionCode()
-        versionName = "4.0.2-self-1.1"
+        versionName = "4.0.2-m1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         flavorDimensions += "version"
         setProperty("archivesBaseName", "app-${versionName}(${versionCode})")
@@ -94,7 +113,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("ciRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
@@ -139,11 +162,20 @@ android {
 
 }
 fun calculateVersionCode(): Int {
-    val calendar = Calendar.getInstance()
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH) + 1
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
-    return year * 10000 + month * 100 + day
+    val stdout = java.io.ByteArrayOutputStream()
+    val result = exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+        standardOutput = stdout
+        isIgnoreExitValue = true
+    }
+
+    val commitCount = stdout.toString().trim().toIntOrNull()
+    if (result.exitValue == 0 && commitCount != null && commitCount > 0) {
+        return commitCount
+    }
+
+    // Fallback keeps local/sandboxed builds usable even if .git metadata is unavailable.
+    return 1
 }
 
 configurations.configureEach {

@@ -5,8 +5,6 @@ import os
 import re
 import subprocess
 import sys
-import time
-from urllib.parse import quote
 import md2tgmd
 import requests
 try:
@@ -136,7 +134,7 @@ def build_logs(commits,workspace):
                     logs[cate['title']].append(commit['message'])
     return logs
 
-def write_logs(logs,workspace,channel,tag,repo,restart):
+def write_logs(logs,workspace,channel,tag,restart):
     # 创建dist目录
     os.makedirs(workspace + '/dist', exist_ok=True)
     log_data = ""
@@ -158,10 +156,6 @@ def write_logs(logs,workspace,channel,tag,repo,restart):
         file.write(json_str)
 
     with open(workspace + '/dist/README.md', 'w', encoding='utf-8') as file:
-        file.write("# 下载地址\n")
-        # 对tag进行编码
-        file.write(f" - [Github 下载](https://github.com/{repo}/releases/download/{tag}/app-release-signed.apk)\n")
-        file.write(f" - [网盘下载](https://cloud.ankio.net/%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/%E7%89%88%E6%9C%AC%E6%9B%B4%E6%96%B0/{channel}/{tag}-release.apk)\n")
         if restart:
             file.write("# 重启提示\n")
             file.write(" - 由于修改了Android Framework部分，需要重新启动生效。\n")
@@ -248,174 +242,6 @@ def create_tag(tag,channel):
     )
     print(result.stdout)  # 打印标准输出
     pass
-"""
-发布 APK
-"""
-def publish_apk(repo, tag_name,workspace,log,channel):
-    """发布APK - 只处理GitHub发布，网盘上传移到通知后执行"""
-    publish_to_github(repo, tag_name,  tag_name, log,f"{workspace}/dist/",False if channel == 'Stable' else True)
-    pass
-
-def upload_single_attempt(filename, filename_new, channel, timeout=300):
-    """单次上传尝试，使用更长的超时时间"""
-    url2 = "https://cloud.ankio.net/api/fs/put"
-    filename_new = quote('/自动记账/自动记账/版本更新/' + channel + "/" + filename_new, 'utf-8')
-    headers = {
-        **DEFAULT_HEADERS,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/58.0.3029.110 Safari/537.3',
-        'Authorization': os.getenv("ALIST_TOKEN"),
-        'file-path': filename_new,
-        'As-Task': 'true'
-    }
-    
-    # 获取文件大小用于日志
-    file_size = os.path.getsize(filename)
-    print(f"开始上传文件: {filename_new}, 大小: {file_size / (1024*1024):.2f} MB")
-    
-    with open(filename, 'rb') as file:
-        file_data = file.read()
-    
-    res = requests.put(url=url2, data=file_data, headers=headers, timeout=timeout)
-    return res
-
-def upload(filename, filename_new, channel, max_retries=3):
-    """带重试机制的上传函数"""
-    last_exception = None
-    
-    for attempt in range(max_retries):
-        try:
-            print(f"上传尝试 {attempt + 1}/{max_retries}: {filename_new}")
-            res = upload_single_attempt(filename, filename_new, channel)
-            print(f"上传成功: {res.text}")
-            return True
-            
-        except (requests.exceptions.ConnectionError, 
-                requests.exceptions.Timeout, 
-                requests.exceptions.RequestException) as e:
-            last_exception = e
-            print(f"上传尝试 {attempt + 1} 失败: {str(e)}")
-            
-            if attempt < max_retries - 1:
-                # 指数退避：2^attempt 秒
-                wait_time = 2 ** attempt
-                print(f"等待 {wait_time} 秒后重试...")
-                time.sleep(wait_time)
-            else:
-                print(f"所有上传尝试均失败，最后错误: {str(last_exception)}")
-                return False
-        
-        except Exception as e:
-            # 其他非网络错误，不重试
-            print(f"上传失败 (不可重试错误): {str(e)}")
-            return False
-    
-    return False
-
-
-"""
-发布到 Github
-"""
-def publish_to_github(repo, tag_name, release_name, release_body, file_path, prerelease=False):
-    """
-    创建 GitHub release 并上传文件
-    :param repo: GitHub 仓库名
-    :param tag_name: 发布的标签名 (版本号)
-    :param release_name: 发布的标题
-    :param release_body: 发布的描述信息
-    :param file_path: 要上传的文件路径
-    :param prerelease: 是否是 pre-release
-    """
-    # 从环境变量中获取 GitHub token
-    token = os.getenv("GITHUB_TOKEN")
-
-    if not token:
-        raise ValueError("GITHUB_TOKEN is not set in the environment variables.")
-
-    # 创建 release
-    create_release_url = f"https://api.github.com/repos/{repo}/releases"
-    headers = {
-        **DEFAULT_HEADERS,
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json"
-    }
-    data = {
-        "tag_name": tag_name,
-        "name": release_name,
-        "body": release_body,
-        "draft": False,
-        "prerelease": prerelease
-    }
-
-    response = requests.post(create_release_url, headers=headers, data=json.dumps(data))
-
-    if response.status_code == 201:
-        release_info = response.json()
-        release_id = release_info['id']
-        release_url = release_info['html_url']
-        print(f"Release created successfully: {release_url}")
-        # 上传单个 APK 文件
-        path = file_path + "app-release-signed.apk"
-        # 读取文件内容
-        with open(path, 'rb') as file:
-            file_data = file.read()  # 读取文件的二进制内容
-        # 上传文件
-        upload_url = release_info['upload_url'].split('{')[0]  # 去掉 URL 中的占位符
-        file_name = os.path.basename(path)
-        upload_response = requests.post(
-            upload_url + f"?name={file_name}",
-            headers={
-                **DEFAULT_HEADERS,
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-                "Content-Type": "application/octet-stream"  # 明确指定上传内容类型
-            },
-            data=file_data  # 使用 data 参数传递文件的二进制内容
-        )
-
-        if upload_response.status_code == 201:
-            print(f"File uploaded successfully: {upload_response.json()['browser_download_url']}")
-        else:
-            print(f"Failed to upload file: {upload_response.status_code}, {upload_response.text}")
-    else:
-        print(f"Failed to create release: {response.status_code}, {response.text}")
-
-
-
-"""
-发布到网盘
-"""
-def publish_to_pan(workspace, tag, channel):
-    """发布文件到网盘，失败不影响主要发布流程"""
-    # 按优先级排序：APK最重要，index.json次之，README.md最后
-    files_to_upload = [
-        (workspace + "/dist/app-release-signed.apk", f"/{tag}-release.apk"),
-        (workspace + "/dist/index.json", "/index.json"),
-        (workspace + "/dist/README.md", "/README.md")
-    ]
-    
-    success_count = 0
-    total_files = len(files_to_upload)
-    
-    print(f"开始上传 {total_files} 个文件到网盘...")
-    
-    for local_path, remote_name in files_to_upload:
-        if os.path.exists(local_path):
-            if upload(local_path, remote_name, channel):
-                success_count += 1
-            else:
-                print(f"警告: 文件 {remote_name} 上传失败，但不影响发布流程")
-        else:
-            print(f"警告: 本地文件 {local_path} 不存在，跳过上传")
-    
-    print(f"网盘上传完成: {success_count}/{total_files} 个文件成功")
-    
-    # 即使全部失败也不抛出异常，只记录警告
-    if success_count == 0:
-        print("警告: 所有文件上传到网盘均失败，但 GitHub Release 已成功创建")
-    elif success_count < total_files:
-        print("警告: 部分文件上传失败，用户仍可从 GitHub 下载")
-
 def truncate_content(content):
     # 正则替换，将 ## 替换好
     content = md2tgmd.escape(content)
@@ -522,51 +348,11 @@ def send_apk_with_changelog(workspace, title):
             print("警告: Telegram 通知完全失败，但不影响发布流程")
 
 
-def send_qq_bot_notification(tag, log_data, repo, commit_count):
-    """
-    稳定版发布时通过 QQ 机器人推送通知（参考 AutoRuleSubmit release.js）。
-    使用 BOT_URL 和 BOT_GROUP_ID 环境变量，未配置时静默跳过。
-    """
-    bot_url = os.getenv("BOT_URL")
-    group_id = os.getenv("BOT_GROUP_ID")
-    if not bot_url or not group_id:
-        print("⚠️ 未提供 BOT_URL 或 BOT_GROUP_ID，跳过 QQ 通知")
-        return
-    print("📢 正在发送 QQ 机器人通知...")
-    try:
-        # 日志过长时截断，避免 QQ 消息超限
-        max_log_len = 800
-        log_text = log_data[:max_log_len] + "..." if len(log_data) > max_log_len else log_data
-        msg = (
-            f"🎉 自动记账新版本发布: {tag}\n\n"
-            f"📦 仓库: {repo}\n"
-            f"📊 提交数: {commit_count}\n\n"
-            f"{log_text}"
-        )
-        data = {"msg": msg, "group_id": group_id}
-        resp = requests.post(
-            bot_url,
-            data=data,
-            headers={**DEFAULT_HEADERS, "Content-Type": "application/x-www-form-urlencoded"},
-            timeout=30
-        )
-        if not resp.ok:
-            raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
-        print("✅ QQ 机器人通知发送成功")
-    except Exception as e:
-        print(f"⚠️ QQ 机器人通知发送失败: {e}，不影响发布流程")
-
-
-"""
-通知
-"""
-def notify(title, channel, workspace, log_data, commits, repo):
+def notify(title, workspace):
     send_apk_with_changelog(workspace, title)
-    if channel == "Stable":
-        send_qq_bot_notification(title, log_data, repo, len(commits))
 
 
-def main(repo):
+def main():
     channel = os.getenv('CHANNEL') or 'Stable'
     print(f"渠道: {channel}")
     workspace = os.getenv("GITHUB_WORKSPACE") or os.getcwd()
@@ -581,20 +367,10 @@ def main(repo):
     print(f"新的版本号: {tagVersionName}, 版本代码: {versionCode}")
     restart = get_changed_files_since_tag(tag)
     logs = build_logs(commits,workspace)
-    log_data = write_logs(logs,workspace,channel,tagVersionName,repo,restart)
+    write_logs(logs,workspace,channel,tagVersionName,restart)
     build_apk(workspace, tagVersionName, versionCode)
-    
-    # 按优先级执行发布流程：
-    # 1. GitHub发布（最重要，用户主要下载源）
-    publish_apk(repo, tagVersionName,workspace,log_data,channel)
-    
-    # 2. 通知服务（Telegram、QQ 机器人 - 用户需要及时知道更新）
-    notify(tagVersionName, channel, workspace, log_data, commits, repo)
-    
-    # 3. 网盘上传（备用下载源，失败不影响主要流程）
-    print("开始网盘上传（备用下载源）...")
-    publish_to_pan(workspace, tagVersionName, channel)
+    notify(tagVersionName, workspace)
     
     #create_tag(tagVersionName, channel)
 
-main("AutoAccountingOrg/AutoAccounting")
+main()
