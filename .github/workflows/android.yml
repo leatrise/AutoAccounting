@@ -120,7 +120,7 @@ jobs:
 
         if [ "$STATUS" = "success" ]; then
           APK_PATH=$(ls artifacts/apk/*.apk 2>/dev/null | head -n 1)
-          TARGET_FILENAME="${ARTIFACT_BASENAME}.apk"
+          TARGET_FILENAME="${APK_FILENAME:-release.apk}"
           if [ -n "$APK_PATH" ]; then
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
               -F "chat_id=${TELEGRAM_CHAT_ID}" \

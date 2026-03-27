@@ -1,12 +1,10 @@
 val releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
-val releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
 val hasReleaseSigning = listOf(
     releaseKeystorePath,
     releaseKeystorePassword,
-    releaseKeyAlias,
-    releaseKeyPassword
+    releaseKeyAlias
 ).all { !it.isNullOrBlank() }
 
 plugins {
@@ -68,9 +66,11 @@ android {
         create("ciRelease") {
             if (hasReleaseSigning) {
                 storeFile = file(releaseKeystorePath!!)
+                storeType = "pkcs12"
                 storePassword = releaseKeystorePassword
                 keyAlias = releaseKeyAlias
-                keyPassword = releaseKeyPassword
+                // PKCS12 keystores use the store password for the private key as well.
+                keyPassword = releaseKeystorePassword
             }
         }
     }
