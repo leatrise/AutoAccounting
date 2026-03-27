@@ -162,20 +162,25 @@ android {
 
 }
 fun calculateVersionCode(): Int {
-    val stdout = java.io.ByteArrayOutputStream()
-    val result = exec {
-        commandLine("git", "rev-list", "--count", "HEAD")
-        standardOutput = stdout
-        isIgnoreExitValue = true
-    }
+    return try {
+        val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
+            .directory(rootDir)
+            .redirectErrorStream(true)
+            .start()
 
-    val commitCount = stdout.toString().trim().toIntOrNull()
-    if (result.exitValue == 0 && commitCount != null && commitCount > 0) {
-        return commitCount
-    }
+        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+        val exitCode = process.waitFor()
+        val commitCount = output.toIntOrNull()
 
-    // Fallback keeps local/sandboxed builds usable even if .git metadata is unavailable.
-    return 1
+        if (exitCode == 0 && commitCount != null && commitCount > 0) {
+            commitCount
+        } else {
+            1
+        }
+    } catch (_: Exception) {
+        // Fallback keeps local/sandboxed builds usable even if .git metadata is unavailable.
+        1
+    }
 }
 
 configurations.configureEach {
