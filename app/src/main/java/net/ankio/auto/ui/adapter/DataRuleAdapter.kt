@@ -195,33 +195,7 @@ class DataRuleAdapter(
      * @return 描述文本
      */
     private fun generateRuleDescription(rule: RuleModel): String {
-        val ruleType = rule.type.lowercase()
-        val appPackage = rule.app
-
-
-        val description = when {
-            // 微信相关规则 - 提示关注公众号
-            appPackage.contains("com.tencent.mm") -> {
-                fragment.getString(R.string.rule_desc_wechat_notice, rule.name)
-            }
-
-            // 支付宝规则 - 提示保持后台运行
-            appPackage.contains("com.eg.android.AlipayGphone") -> {
-                fragment.getString(R.string.rule_desc_alipay_app, rule.name)
-            }
-
-            appPackage.contains("com.android.phone") -> {
-                fragment.getString(R.string.rule_desc_sms_hint, rule.name)
-            }
-            // 其他通知类规则 - 提示授权通知权限
-            ruleType == "notice" -> {
-                fragment.getString(R.string.rule_desc_other_notice, rule.name)
-            }
-            // 默认描述
-            else -> ""
-        }
-
-        return description
+        return rule.description
     }
 
 }

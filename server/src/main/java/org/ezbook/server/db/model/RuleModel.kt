@@ -35,6 +35,9 @@ class RuleModel {
     // 规则名称
     var name = ""
 
+    // 规则描述
+    var description = ""
+
     // 系统里面的规则名称
     var systemRuleName = ""
 
@@ -54,6 +57,6 @@ class RuleModel {
     var updateAt: Long = System.currentTimeMillis()
 
     override fun toString(): String {
-        return "RuleModel(id=$id, app='$app', type='$type', js(length)='${js.length}', name='$name', systemRuleName='$systemRuleName', creator='$creator', struct='$struct', autoRecord=$autoRecord, enabled=$enabled)"
+        return "RuleModel(id=$id, app='$app', type='$type', js(length)='${js.length}', name='$name', description='$description', systemRuleName='$systemRuleName', creator='$creator', struct='$struct', autoRecord=$autoRecord, enabled=$enabled)"
     }
 }

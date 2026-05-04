@@ -116,6 +116,7 @@ class RuleEditV3Fragment : BaseWebViewFragment<FragmentRuleV3EditBinding>() {
                     "app" to ruleData.app,
                     "rule_type" to ruleData.type,
                     "creator" to ruleData.creator,
+                    "description" to ruleData.description,
                     "systemRuleName" to ruleData.systemRuleName,
                     "testData" to testData
                 )
@@ -232,6 +233,7 @@ class RuleEditV3Fragment : BaseWebViewFragment<FragmentRuleV3EditBinding>() {
 
                 ruleData.struct = Gson().toJson(formData)
                 ruleData.name = formData.get("name").asString
+                ruleData.description = formData.get("description")?.asString ?: ""
                 ruleData.js = getRuleJs(formData)
                 launch {
                     if (ruleData.id > 0) {

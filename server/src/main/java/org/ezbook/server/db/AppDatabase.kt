@@ -64,7 +64,7 @@ import org.ezbook.server.db.model.TagModel
         TagModel::class,
         AnalysisTaskModel::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -440,5 +440,12 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
     override fun migrate(database: SupportSQLiteDatabase) {
         // AppDataModel 添加 image 字段，存储关联图片的相对路径（如OCR截图）
         database.execSQL("ALTER TABLE AppDataModel ADD COLUMN image TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // RuleModel 添加 description 字段，支持用户自定义规则描述
+        database.execSQL("ALTER TABLE RuleModel ADD COLUMN description TEXT NOT NULL DEFAULT ''")
     }
 }
