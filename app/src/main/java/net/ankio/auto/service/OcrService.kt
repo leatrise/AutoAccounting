@@ -100,10 +100,10 @@ class OcrService : ICoreService() {
     private var ocrDoing = false
 
     /**
-     * 触发振动反馈
-     * 在OCR识别开始时提供触觉反馈
+     * 触发轻振动反馈
+     * 仅在 OCR 成功识别后提供轻微触觉确认。
      */
-    private fun triggerVibration() {
+    private fun triggerSuccessVibration() {
         try {
             val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 // Android 12+ 使用VibratorManager
@@ -122,7 +122,7 @@ class OcrService : ICoreService() {
             }
 
             val vibrationEffect =
-                VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
+                VibrationEffect.createOneShot(40, 120)
             vibrator.vibrate(vibrationEffect)
         } catch (e: Exception) {
             Logger.e("Vibration failed", e)
@@ -187,7 +187,6 @@ class OcrService : ICoreService() {
             }
         }
 
-        triggerVibration()
         Logger.i("[TapBack→OCR] proceed: pkg=$packageName manual=$manual")
         executeOcrFlow(packageName, manual)
     }
@@ -237,6 +236,7 @@ class OcrService : ICoreService() {
                 if (billData != null) {
                     val moneyText = String.format("¥%.2f", billData.billInfoModel.money)
 
+                    triggerSuccessVibration()
                     ocrView.showSuccess(coreService, moneyText) {
                         if (PrefManager.ocrAccessibilityAutoTrigger) {
                             val activityName = SelectToSpeakService.topActivity ?: ""
@@ -495,7 +495,6 @@ class OcrService : ICoreService() {
 
     }
 }
-
 
 
 
