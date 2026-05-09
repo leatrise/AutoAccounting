@@ -61,7 +61,51 @@ object SystemUtils {
         ) ?: return false
         return prefString.contains("${application.packageName}/${serviceClass.name}")
     }
-    
+
+    /**
+     * 检查当前应用是否具备 WRITE_SECURE_SETTINGS。
+     * 该权限通常通过 adb 授予，用于直接写入系统安全设置。
+     */
+    fun canWriteSecureSettings(): Boolean {
+        return application.checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * 通过 Settings.Secure 直接启用指定无障碍服务。
+     * 需要当前应用具备 WRITE_SECURE_SETTINGS。
+     */
+    fun enableAccessibilityService(serviceClass: Class<*>): Boolean {
+        if (!canWriteSecureSettings()) return false
+
+        val componentName = "${application.packageName}/${serviceClass.name}"
+        val current = Settings.Secure.getString(
+            application.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ).orEmpty()
+
+        if (!current.contains(componentName)) {
+            val updated = if (current.isBlank()) {
+                componentName
+            } else {
+                "$current:$componentName"
+            }
+            if (!Settings.Secure.putString(
+                    application.contentResolver,
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                    updated
+                )
+            ) {
+                return false
+            }
+        }
+
+        return Settings.Secure.putInt(
+            application.contentResolver,
+            Settings.Secure.ACCESSIBILITY_ENABLED,
+            1
+        )
+    }
 
     /**
      * 在主线程运行

@@ -14,6 +14,8 @@ import com.google.android.accessibility.selecttospeak.SelectToSpeakService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.ankio.auto.App
+import net.ankio.auto.BuildConfig
 import net.ankio.auto.R
 import net.ankio.auto.constant.WorkMode
 import net.ankio.auto.http.api.JsAPI
@@ -76,7 +78,9 @@ class OcrService : ICoreService() {
         if (intent?.getStringExtra("intentType") == IntentType.OCR.name) {
             coreService.lifecycleScope.launch {
                 val manual = intent.getBooleanExtra("manual", false)
-                triggerOcr(manual)
+                val allowAutoEnableAccessibility =
+                    intent.getBooleanExtra("allowAutoEnableAccessibility", true)
+                triggerOcr(manual, allowAutoEnableAccessibility)
             }
         }
 
@@ -134,7 +138,7 @@ class OcrService : ICoreService() {
      * 支持多种触发方式：双击背部、Intent、磁贴等
      * 所有异常和状态通过顶部横幅展示。
      */
-    private suspend fun triggerOcr(manual: Boolean) {
+    private suspend fun triggerOcr(manual: Boolean, allowAutoEnableAccessibility: Boolean = true) {
         if (ocrDoing) {
             Logger.d("[TapBack→OCR] skip: pipeline busy (ocrDoing=true) manual=$manual")
             return
@@ -152,7 +156,7 @@ class OcrService : ICoreService() {
             return
         }
 
-        if (!OcrTools.requestPermission()) {
+        if (!OcrTools.requestPermission(allowAutoEnableAccessibility)) {
             Logger.d("[TapBack→OCR] skip: accessibility not ready manual=$manual")
             if (manual) ocrView.showError(
                 coreService,
@@ -484,7 +488,9 @@ class OcrService : ICoreService() {
          * 启动权限设置页面
          */
         override fun startPermissionActivity(context: Context) {
-
+            App.launch {
+                OcrTools.requestPermission()
+            }
         }
 
         /**
@@ -495,6 +501,5 @@ class OcrService : ICoreService() {
 
     }
 }
-
 
 

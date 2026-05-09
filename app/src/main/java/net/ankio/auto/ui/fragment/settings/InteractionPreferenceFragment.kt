@@ -20,8 +20,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
 import net.ankio.auto.R
+import net.ankio.auto.constant.WorkMode
 import net.ankio.auto.service.CoreService
-import net.ankio.auto.service.ocr.OcrTools
 import net.ankio.auto.ui.api.BasePreferenceFragment
 import net.ankio.auto.ui.api.BaseSheetDialog
 import net.ankio.auto.ui.dialog.EditorDialogBuilder
@@ -105,6 +105,11 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
 
         // OCR / LSPatch / Xposed 均可使用（取决于是否运行 CoreService）
         findPreference<MaterialSwitchPreference>("ocrBackTapTrigger")?.isEnabled = true
+
+        if (!WorkMode.isOcr()) {
+            findPreference<MaterialSwitchPreference>("ocrTileAutoEnableAccessibility")?.isEnabled =
+                false
+        }
     }
 
     /**
@@ -190,6 +195,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
                 "ocrAccessibilityPageData" -> PrefManager.ocrAccessibilityPageData
                 "ocrShowAnimation" -> PrefManager.ocrShowAnimation
                 "ocrAccessibilityKeepAlive" -> PrefManager.ocrAccessibilityKeepAlive
+                "ocrTileAutoEnableAccessibility" -> PrefManager.ocrTileAutoEnableAccessibility
                 // 弹窗风格
                 "roundStyle" -> PrefManager.uiRoundStyle
                 "isExpenseRed" -> PrefManager.isExpenseRed
@@ -214,6 +220,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
                 "ocrAccessibilityPageData" -> PrefManager.ocrAccessibilityPageData = value
                 "ocrShowAnimation" -> PrefManager.ocrShowAnimation = value
                 "ocrAccessibilityKeepAlive" -> PrefManager.ocrAccessibilityKeepAlive = value
+                "ocrTileAutoEnableAccessibility" -> PrefManager.ocrTileAutoEnableAccessibility = value
                 // 弹窗风格
                 "roundStyle" -> PrefManager.uiRoundStyle = value
                 "isExpenseRed" -> PrefManager.isExpenseRed = value
@@ -247,4 +254,3 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
         }
     }
 }
-

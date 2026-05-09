@@ -173,6 +173,9 @@ object PrefManager {
         RULE_MATCH_INCLUDE_DISABLED(
             Setting.RULE_MATCH_INCLUDE_DISABLED,
             { ruleMatchIncludeDisabled.toString() }),
+        OCR_TILE_AUTO_ENABLE_ACCESSIBILITY(
+            Setting.OCR_TILE_AUTO_ENABLE_ACCESSIBILITY,
+            { ocrTileAutoEnableAccessibility.toString() }),
         DEBUG_MODE(Setting.DEBUG_MODE, { debugMode.toString() }),
         LISTENER_APP_LIST(Setting.LISTENER_APP_LIST, { appWhiteList.joinToString(",") }),
         PROACTIVELY_MODEL(Setting.PROACTIVELY_MODEL, { featureLeading.toString() }),
@@ -418,6 +421,14 @@ object PrefManager {
             DefaultData.OCR_ACCESSIBILITY_KEEP_ALIVE
         )
         set(value) = putBoolean(Setting.OCR_ACCESSIBILITY_KEEP_ALIVE, value)
+
+    /** 点击 OCR 磁贴时，若持有 WRITE_SECURE_SETTINGS 则自动尝试开启无障碍 */
+    var ocrTileAutoEnableAccessibility: Boolean
+        get() = getBoolean(
+            Setting.OCR_TILE_AUTO_ENABLE_ACCESSIBILITY,
+            DefaultData.OCR_TILE_AUTO_ENABLE_ACCESSIBILITY
+        )
+        set(value) = putBoolean(Setting.OCR_TILE_AUTO_ENABLE_ACCESSIBILITY, value)
 
     // -------- 弹窗风格 --------
     /** 圆角风格开关 - 是否使用圆角 UI 设计 */

@@ -42,6 +42,14 @@
             android:key="ocrAccessibilityKeepAlive"
             android:summary="@string/setting_ocr_accessibility_keep_alive_summary"
             android:title="@string/setting_ocr_accessibility_keep_alive" />
+
+        <rikka.material.preference.MaterialSwitchPreference
+            android:defaultValue="true"
+            android:icon="@drawable/ic_ocr"
+            android:key="ocrTileAutoEnableAccessibility"
+            android:summary="@string/setting_ocr_tile_auto_enable_accessibility_summary"
+            android:title="@string/setting_ocr_tile_auto_enable_accessibility" />
+
         <rikka.material.preference.MaterialSwitchPreference
             android:defaultValue="true"
             android:icon="@drawable/ic_ocr"

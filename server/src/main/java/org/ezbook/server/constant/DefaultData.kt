@@ -87,6 +87,7 @@ object DefaultData {
     val OCR_ACCESSIBILITY_PAGE_DATA: Boolean = false                 // OCR流程优先使用无障碍页面文本默认关闭
     val OCR_SHOW_ANIMATION: Boolean = true                          // OCR识别时显示动画默认开启
     val OCR_ACCESSIBILITY_KEEP_ALIVE: Boolean = false             // 常驻后台识别默认开启
+    val OCR_TILE_AUTO_ENABLE_ACCESSIBILITY: Boolean = true          // 点击磁贴时自动尝试开启无障碍默认开启
 
     // -------- 弹窗风格 --------
     val USE_ROUND_STYLE = true                                      // 圆角风格默认开启

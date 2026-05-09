@@ -11,12 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import net.ankio.auto.App
-import net.ankio.auto.BuildConfig
-import net.ankio.auto.R
 import net.ankio.auto.storage.Logger
 import net.ankio.auto.utils.SystemUtils
-import net.ankio.shell.Shell
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.coroutines.resume
@@ -27,8 +23,6 @@ import kotlin.coroutines.resume
 object OcrTools {
 
     private val SERVICE_CLASS = SelectToSpeakService::class.java
-    private val COMPONENT_NAME = "${BuildConfig.APPLICATION_ID}/${SERVICE_CLASS.name}"
-
     // ======================== 核心功能 ========================
 
     /**
@@ -93,35 +87,28 @@ object OcrTools {
     fun hasPermission() = SystemUtils.isAccessibilityServiceEnabled(SERVICE_CLASS)
 
 
-    /** 尝试开启无障碍：有 Root 用 Root，没 Root 弹设置 */
-    suspend fun requestPermission(): Boolean {
+    /** 尝试开启无障碍：允许自动开启时先写 Secure Settings，否则直接跳系统设置页 */
+    suspend fun requestPermission(allowAutoEnable: Boolean = true): Boolean {
         if (hasPermission()) return true
 
-        val shell = Shell(BuildConfig.APPLICATION_ID)
-        val hasShell = shell.rootPermission() || shell.shizukuPermission()
-
-        if (hasShell) {
-            tryEnableViaShell(shell)
+        if (allowAutoEnable && SystemUtils.canWriteSecureSettings()) {
+            tryEnableViaSecureSettings()
             delay(800) // 等待服务启动
         }
 
         if (!hasPermission()) {
             withContext(Dispatchers.Main) { openSettings() }
             return false
-
         }
         return true
     }
 
-    private suspend fun tryEnableViaShell(shell: Shell) {
-        val cmdGet = "settings get secure enabled_accessibility_services"
-        val current = shell.exec(cmdGet).trim().let { if (it == "null") "" else it }
-
-        if (current.contains(COMPONENT_NAME)) return
-
-        val newList = if (current.isEmpty()) COMPONENT_NAME else "$current:$COMPONENT_NAME"
-        shell.exec("settings put secure enabled_accessibility_services $newList")
-        shell.exec("settings put secure accessibility_enabled 1")
+    private suspend fun tryEnableViaSecureSettings() = withContext(Dispatchers.IO) {
+        runCatching {
+            SystemUtils.enableAccessibilityService(SERVICE_CLASS)
+        }.onFailure {
+            Logger.e("Enable accessibility via WRITE_SECURE_SETTINGS failed", it)
+        }
     }
 
     private fun openSettings() {

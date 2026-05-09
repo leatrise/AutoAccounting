@@ -22,6 +22,7 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import net.ankio.auto.R
 import net.ankio.auto.storage.Logger
+import net.ankio.auto.utils.PrefManager
 import org.ezbook.server.intent.OCRIntent
 
 /** OCR 快速设置磁贴：点击触发手动 OCR 识别 */
@@ -38,7 +39,10 @@ class OcrTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
-        val intent = OCRIntent().toIntent().apply { putExtra("manual", true) }
+        val intent = OCRIntent().toIntent().apply {
+            putExtra("manual", true)
+            putExtra("allowAutoEnableAccessibility", PrefManager.ocrTileAutoEnableAccessibility)
+        }
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startActivityAndCollapse(

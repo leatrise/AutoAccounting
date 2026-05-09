@@ -944,6 +944,8 @@
     <string name="ocr_error_keyword_filtered">未包含识别关键字</string>
     <string name="setting_ocr_accessibility_keep_alive">常驻后台识别</string>
     <string name="setting_ocr_accessibility_keep_alive_summary">关闭后，每次 OCR 识别结束将自动停止无障碍服务</string>
+    <string name="setting_ocr_tile_auto_enable_accessibility">手动触发时自动开启无障碍</string>
+    <string name="setting_ocr_tile_auto_enable_accessibility_summary">自动尝试开启本应用的无障碍服务（需要 修改系统安全设置 权限）</string>
     <string name="ocr_auth_root">Root</string>
     <string name="ocr_auth_shizuku">Shizuku</string>
     <string name="ocr_auth_accessibility">无障碍服务</string>

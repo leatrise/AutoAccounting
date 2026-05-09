@@ -289,7 +289,7 @@ Rebase 时确认：
 - 本次进行了 `AppDatabase` 升级，这一项在以后 `rebase` 时要特别当心。
 - 数据库版本和 migration 冲突通常不会在代码合并时显眼暴露，但会直接影响升级路径；这里必须人工复查，不能只依赖自动合并。
 
-### 9. WORKING `refactor: 修改振动机制`
+### 9. `249dd74` `refactor: 修改振动机制`
 
 目的：
 - 调整 OCR 的触觉反馈策略，避免在识别开始时就振动。
@@ -339,3 +339,48 @@ Rebase 时确认：
 - 不要试图记录所有小修小补，只记录“和上游容易撞车”的改动。
 - 一条记录最好对应一个 commit；如果一个功能拆成多个 commit，可以在同一条里合并写最终状态。
 - `rebase` 完成后，如果某项二改已经被上游正式吸收，可以在对应条目后标记：`已被上游吸收，可删除本地补丁`。
+
+### 10. `working tree` `feat(ocr): 磁贴自动开启无障碍`
+
+目的：
+- 保留原有 OCR 快捷磁贴，在点击时按配置决定是否自动尝试开启本应用无障碍服务。
+- 当应用已持有 `WRITE_SECURE_SETTINGS` 时，直接写入 `Settings.Secure` 开启无障碍；否则继续回退到系统无障碍设置页。
+- 为该行为新增设置项。
+
+涉及文件：
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/java/net/ankio/auto/service/OcrService.kt`
+- `app/src/main/java/net/ankio/auto/service/OcrTileService.kt`
+- `app/src/main/java/net/ankio/auto/service/ocr/OcrTools.kt`
+- `app/src/main/java/net/ankio/auto/utils/SystemUtils.kt`
+- `app/src/main/java/net/ankio/auto/utils/PrefManager.kt`
+- `app/src/main/java/net/ankio/auto/ui/fragment/settings/InteractionPreferenceFragment.kt`
+- `app/src/main/res/xml/settings_interaction.xml`
+- `server/src/main/java/org/ezbook/server/constant/Setting.kt`
+- `server/src/main/java/org/ezbook/server/constant/DefaultData.kt`
+
+关键点：
+- 没有新增磁贴，仍使用原有 `OcrTileService`。
+- 新增设置项：`ocr_tile_auto_enable_accessibility`
+- 默认值：`true`
+- 磁贴点击时会透传：`allowAutoEnableAccessibility`
+- `OcrService` 在手动 OCR 入口读取该参数，并决定本次是否允许自动开启无障碍。
+- `OcrTools.requestPermission(allowAutoEnable: Boolean = true)` 现在的优先级是：
+  - 已启用无障碍：直接通过
+  - 允许自动开启且持有 `WRITE_SECURE_SETTINGS`：尝试直接启用
+  - 否则：跳转系统无障碍设置页
+- `SystemUtils` 新增：
+  - `canWriteSecureSettings()`
+  - `enableAccessibilityService(serviceClass)`
+- `AndroidManifest.xml` 新增权限声明：
+  - `android.permission.WRITE_SECURE_SETTINGS`
+
+Rebase 时确认：
+- 上游如果改了 OCR 快捷磁贴入口、`FloatingWindowTriggerActivity` 或 `CoreService.start(...)` 的透传逻辑，确认 `allowAutoEnableAccessibility` 没有在中间层丢失。
+- 上游如果改了 `OcrTools.requestPermission()`、无障碍检测方式或设置页结构，重点确认这次“按来源决定是否自动开启”的分支仍然保留。
+- 上游如果引入了新的权限申请封装，不要把 `WRITE_SECURE_SETTINGS` 的直接启用逻辑误删成只会跳设置页。
+- 如果后续决定放弃 `WRITE_SECURE_SETTINGS` 方案，至少要保留“磁贴可配置是否自动尝试开启无障碍”的用户行为约定。
+
+特别注意：
+- 这一条当前默认为 `working tree`，后续提交后请把 hash 和标题替换成真实提交信息。
+- 这次改动横跨 `磁贴入口 -> Activity 透传 -> Service 权限检查 -> Secure Settings 写入 -> 设置页开关`，`rebase` 时很容易只合并到其中一半；需要按整条链路人工复查。
