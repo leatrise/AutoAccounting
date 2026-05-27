@@ -73,7 +73,18 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
             }
         }
 
-        // 双击背部触发 OCR：由 [BackTapOcrTriggerService] 承载；CoreService 已运行时重启以即时生效（含 Xposed / LSPatch）
+        // 传感器触发 OCR：由独立子服务承载；CoreService 已运行时重启以即时生效（含 Xposed / LSPatch）
+        findPreference<MaterialSwitchPreference>("ocrFlipTrigger")?.apply {
+            setOnPreferenceChangeListener { _, newValue ->
+                val enabled = (newValue as? Boolean) ?: return@setOnPreferenceChangeListener true
+                PrefManager.ocrFlipTrigger = enabled
+                if (CoreService.isRunning(requireContext())) {
+                    CoreService.restart(requireActivity())
+                }
+                true
+            }
+        }
+
         findPreference<MaterialSwitchPreference>("ocrBackTapTrigger")?.apply {
             setOnPreferenceChangeListener { _, newValue ->
                 val enabled = (newValue as? Boolean) ?: return@setOnPreferenceChangeListener true
@@ -104,6 +115,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
         }
 
         // OCR / LSPatch / Xposed 均可使用（取决于是否运行 CoreService）
+        findPreference<MaterialSwitchPreference>("ocrFlipTrigger")?.isEnabled = true
         findPreference<MaterialSwitchPreference>("ocrBackTapTrigger")?.isEnabled = true
 
         if (!WorkMode.isOcr()) {
@@ -190,6 +202,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
                 "loadSuccess" -> PrefManager.loadSuccess
                 "showDuplicatedPopup" -> PrefManager.showDuplicatedPopup
                 // OCR识别
+                "ocrFlipTrigger" -> PrefManager.ocrFlipTrigger
                 "ocrBackTapTrigger" -> PrefManager.ocrBackTapTrigger
                 "ocrAccessibilityAutoTrigger" -> PrefManager.ocrAccessibilityAutoTrigger
                 "ocrAccessibilityPageData" -> PrefManager.ocrAccessibilityPageData
@@ -215,6 +228,7 @@ class InteractionPreferenceFragment : BasePreferenceFragment() {
                 "loadSuccess" -> PrefManager.loadSuccess = value
                 "showDuplicatedPopup" -> PrefManager.showDuplicatedPopup = value
                 // OCR识别
+                "ocrFlipTrigger" -> PrefManager.ocrFlipTrigger = value
                 "ocrBackTapTrigger" -> PrefManager.ocrBackTapTrigger = value
                 "ocrAccessibilityAutoTrigger" -> PrefManager.ocrAccessibilityAutoTrigger = value
                 "ocrAccessibilityPageData" -> PrefManager.ocrAccessibilityPageData = value

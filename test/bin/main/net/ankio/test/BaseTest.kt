@@ -395,3 +395,4 @@ abstract class BaseTest {
         return " ".repeat(padding) + text + " ".repeat(width - padding - text.length)
     }
 }
+

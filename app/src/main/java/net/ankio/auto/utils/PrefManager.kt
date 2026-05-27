@@ -173,6 +173,12 @@ object PrefManager {
         RULE_MATCH_INCLUDE_DISABLED(
             Setting.RULE_MATCH_INCLUDE_DISABLED,
             { ruleMatchIncludeDisabled.toString() }),
+        OCR_FLIP_TRIGGER(
+            Setting.OCR_FLIP_TRIGGER,
+            { ocrFlipTrigger.toString() }),
+        OCR_BACK_TAP_TRIGGER(
+            Setting.OCR_BACK_TAP_TRIGGER,
+            { ocrBackTapTrigger.toString() }),
         OCR_TILE_AUTO_ENABLE_ACCESSIBILITY(
             Setting.OCR_TILE_AUTO_ENABLE_ACCESSIBILITY,
             { ocrTileAutoEnableAccessibility.toString() }),
@@ -385,9 +391,14 @@ object PrefManager {
         get() = "accessibility"
         set(_) { /* 不再支持切换 */ }
 
+    /** 翻转手机触发当前页 OCR（[FlipOcrTriggerService]） */
+    var ocrFlipTrigger: Boolean
+        get() = getBoolean(Setting.OCR_FLIP_TRIGGER, DefaultData.OCR_FLIP_TRIGGER)
+        set(value) = putBoolean(Setting.OCR_FLIP_TRIGGER, value)
+
     /**
      * 双击背部传感器触发当前页 OCR（[BackTapOcrTriggerService]）；与纯 OCR / LSPatch / Xposed 工作模式无关，
-     * 仅依赖 [CoreService] 是否在运行。存储键仍为 [Setting.OCR_BACK_TAP_TRIGGER]（原「翻转触发」开关位）。
+     * 仅依赖 [CoreService] 是否在运行。
      */
     var ocrBackTapTrigger: Boolean
         get() = getBoolean(Setting.OCR_BACK_TAP_TRIGGER, DefaultData.OCR_BACK_TAP_TRIGGER)

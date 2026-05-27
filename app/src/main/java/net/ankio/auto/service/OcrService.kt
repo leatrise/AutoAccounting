@@ -42,7 +42,8 @@ import java.io.File
 /**
  * OCR 服务：截取屏幕并完成 OCR / AI 分析。
  *
- * **双击背部触发**由独立子服务 [BackTapOcrTriggerService] 负责，通过 OCR Intent 与本服务协作。
+ * **翻转/双击背部触发**由独立子服务 [FlipOcrTriggerService] / [BackTapOcrTriggerService]
+ * 负责，通过 OCR Intent 与本服务协作。
  */
 class OcrService : ICoreService() {
 
@@ -135,29 +136,29 @@ class OcrService : ICoreService() {
 
     /**
      * 触发OCR识别
-     * 支持多种触发方式：双击背部、Intent、磁贴等
+     * 支持多种触发方式：翻转、双击背部、Intent、磁贴等
      * 所有异常和状态通过顶部横幅展示。
      */
     private suspend fun triggerOcr(manual: Boolean, allowAutoEnableAccessibility: Boolean = true) {
         if (ocrDoing) {
-            Logger.d("[TapBack→OCR] skip: pipeline busy (ocrDoing=true) manual=$manual")
+            Logger.d("[Trigger→OCR] skip: pipeline busy (ocrDoing=true) manual=$manual")
             return
         }
 
         val keyguardManager =
             coreService.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
         if (keyguardManager.isKeyguardLocked) {
-            Logger.d("[TapBack→OCR] skip: keyguard locked manual=$manual")
+            Logger.d("[Trigger→OCR] skip: keyguard locked manual=$manual")
             return
         }
 
         if (PrefManager.landscapeDnd && DisplayUtils.isWindowLandscape(coreService)) {
-            Logger.d("[TapBack→OCR] skip: landscape DND enabled manual=$manual")
+            Logger.d("[Trigger→OCR] skip: landscape DND enabled manual=$manual")
             return
         }
 
         if (!OcrTools.requestPermission(allowAutoEnableAccessibility)) {
-            Logger.d("[TapBack→OCR] skip: accessibility not ready manual=$manual")
+            Logger.d("[Trigger→OCR] skip: accessibility not ready manual=$manual")
             if (manual) ocrView.showError(
                 coreService,
                 coreService.getString(R.string.ocr_error_accessibility_not_ready)
@@ -169,7 +170,7 @@ class OcrService : ICoreService() {
         ocrDoing = true
         OcrTools.collapseStatusBar()
         val pkg = OcrTools.getTopApp() ?: run {
-            Logger.d("[TapBack→OCR] skip: getTopApp() null (no foreground package) manual=$manual")
+            Logger.d("[Trigger→OCR] skip: getTopApp() null (no foreground package) manual=$manual")
             if (manual) ocrView.showError(
                 coreService,
                 coreService.getString(R.string.ocr_error_no_foreground_app)
@@ -183,15 +184,15 @@ class OcrService : ICoreService() {
             pkg in PrefManager.appWhiteList -> pkg
             else -> {
                 Logger.d(
-                    "[TapBack→OCR] skip: package not in whitelist pkg=$pkg manual=$manual " +
-                            "(double-tap only runs OCR for whitelisted apps)",
+                    "[Trigger→OCR] skip: package not in whitelist pkg=$pkg manual=$manual " +
+                            "(sensor triggers only run OCR for whitelisted apps)",
                 )
                 ocrDoing = false
                 return
             }
         }
 
-        Logger.i("[TapBack→OCR] proceed: pkg=$packageName manual=$manual")
+        Logger.i("[Trigger→OCR] proceed: pkg=$packageName manual=$manual")
         executeOcrFlow(packageName, manual)
     }
 

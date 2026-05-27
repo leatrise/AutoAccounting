@@ -72,13 +72,14 @@ class CoreService : LifecycleService() {
 
     /**
      * 根据工作模式初始化服务列表。
-     * Xposed 模式：OCR、双击背部触发、悬浮窗（无后台 HTTP）。
-     * 其他模式：后台 HTTP、OCR、双击背部触发、悬浮窗。
+     * Xposed 模式：OCR、翻转/双击背部触发、悬浮窗（无后台 HTTP）。
+     * 其他模式：后台 HTTP、OCR、翻转/双击背部触发、悬浮窗。
      */
     private fun initializeServices() {
         services = if (WorkMode.isXposed()) {
             listOf(
                 OcrService(),
+                FlipOcrTriggerService(),
                 BackTapOcrTriggerService(),
                 OverlayService(),
             )
@@ -86,6 +87,7 @@ class CoreService : LifecycleService() {
             listOf(
                 BackgroundHttpService(),
                 OcrService(),
+                FlipOcrTriggerService(),
                 BackTapOcrTriggerService(),
                 OverlayService(),
             )
