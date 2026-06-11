@@ -718,6 +718,11 @@ object PrefManager {
         get() = getString(Setting.PAGE_SIGNATURES, "[]")
         set(value) = putString(Setting.PAGE_SIGNATURES, value)
 
+    /** 不再询问是否记住的页面特征（JSON 数组） */
+    var ignoredPageSignatures: String
+        get() = getString(Setting.IGNORED_PAGE_SIGNATURES, "[]")
+        set(value) = putString(Setting.IGNORED_PAGE_SIGNATURES, value)
+
     /** 监听应用白名单 - 允许自动记账的应用包名列表（CSV 格式存储） */
     var appWhiteList: MutableList<String>
         get() = getString(Setting.LISTENER_APP_LIST, DefaultData.APP_FILTER)

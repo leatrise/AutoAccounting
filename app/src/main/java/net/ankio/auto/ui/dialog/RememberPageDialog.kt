@@ -63,7 +63,16 @@ object RememberPageDialog {
                 )
                 ToastUtils.info(context.getString(R.string.ocr_remember_page_success))
             }
-            .setNegativeButton(android.R.string.cancel, null)
+            .setNegativeButton(R.string.ocr_remember_page_never_ask) { _, _ ->
+                PageSignatureManager.ignore(
+                    PageSignature(
+                        packageName = packageName,
+                        activityName = activityName,
+                        structureFingerprint = structureFingerprint,
+                    )
+                )
+                ToastUtils.info(context.getString(R.string.ocr_remember_page_ignored))
+            }
             .show()
     }
 }

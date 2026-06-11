@@ -267,7 +267,8 @@ class OcrService : ICoreService() {
     }
     /**
      * 展示记住页面弹窗
-     * 若已有匹配规则则不再弹窗。Service 环境下 BaseSheetDialog 自动使用悬浮窗模式
+     * 若页面已记住或已设为不再询问，则不弹窗。
+     * Service 环境下 BaseSheetDialog 自动使用悬浮窗模式。
      */
     private fun showRememberPageDialog(
         structFp: String,
@@ -275,6 +276,7 @@ class OcrService : ICoreService() {
         activityName: String,
     ) {
         if (PageSignatureManager.matches(packageName, activityName, structFp)) return
+        if (PageSignatureManager.isIgnored(packageName, activityName, structFp)) return
         coreService.lifecycleScope.launch {
             withContext(Dispatchers.Main) {
                 RememberPageDialog.show(

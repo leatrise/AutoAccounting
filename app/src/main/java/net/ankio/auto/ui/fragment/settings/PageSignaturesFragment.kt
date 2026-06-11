@@ -20,6 +20,7 @@ import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.tabs.TabLayout
 import net.ankio.auto.R
 import net.ankio.auto.databinding.FragmentPageSignaturesBinding
 import net.ankio.auto.databinding.ItemPageSignatureBinding
@@ -31,24 +32,43 @@ import net.ankio.auto.ui.dialog.BottomSheetDialogBuilder
 import net.ankio.auto.utils.getAppInfoFromPackageName
 
 /**
- * 已记住页面管理 Fragment
+ * 页面特征管理 Fragment
  *
- * 展示并管理通过手动识别成功后记住的页面特征列表。
+ * 展示并管理已记住页面和不再询问页面。
  */
 class PageSignaturesFragment : BaseFragment<FragmentPageSignaturesBinding>() {
 
     private lateinit var adapter: Adapter
+    private var listMode = ListMode.REMEMBERED
 
     override fun onViewCreated(view: android.view.View, savedInstanceState: android.os.Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
 
         adapter = Adapter(
-            onDelete = { sig -> confirmDelete(sig) }
+            onDelete = { sig -> confirmDelete(sig, listMode) }
         )
         binding.recycler.layoutManager = LinearLayoutManager(requireContext())
         binding.recycler.adapter = adapter
 
+        binding.listTabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                listMode = if (tab.position == 0) {
+                    ListMode.REMEMBERED
+                } else {
+                    ListMode.IGNORED
+                }
+                refreshList()
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) = Unit
+
+            override fun onTabReselected(tab: TabLayout.Tab) = Unit
+        })
+
+        binding.listTabs.getTabAt(
+            if (listMode == ListMode.REMEMBERED) 0 else 1
+        )?.select()
         refreshList()
     }
 
@@ -57,13 +77,20 @@ class PageSignaturesFragment : BaseFragment<FragmentPageSignaturesBinding>() {
         refreshList()
     }
 
-    private fun confirmDelete(sig: PageSignature) {
+    private fun confirmDelete(sig: PageSignature, mode: ListMode) {
         val appName = getAppInfoFromPackageName(sig.packageName)?.name ?: sig.packageName
+        val message = when (mode) {
+            ListMode.REMEMBERED -> getString(R.string.ocr_delete_page_confirm, appName)
+            ListMode.IGNORED -> getString(R.string.ocr_delete_ignored_page_confirm, appName)
+        }
         BaseSheetDialog.create<BottomSheetDialogBuilder>(requireContext())
             .setTitle(getString(R.string.delete_data))
-            .setMessage(getString(R.string.ocr_delete_page_confirm, appName))
+            .setMessage(message)
             .setPositiveButton(getString(R.string.sure_msg)) { _, _ ->
-                PageSignatureManager.remove(sig.key())
+                when (mode) {
+                    ListMode.REMEMBERED -> PageSignatureManager.remove(sig.key())
+                    ListMode.IGNORED -> PageSignatureManager.removeIgnored(sig.key())
+                }
                 refreshList()
             }
             .setNegativeButton(getString(R.string.cancel_msg)) { _, _ -> }
@@ -71,10 +98,24 @@ class PageSignaturesFragment : BaseFragment<FragmentPageSignaturesBinding>() {
     }
 
     private fun refreshList() {
-        val list = PageSignatureManager.getAll()
+        val list = when (listMode) {
+            ListMode.REMEMBERED -> PageSignatureManager.getAll()
+            ListMode.IGNORED -> PageSignatureManager.getAllIgnored()
+        }
         adapter.submitList(list)
+        binding.emptyView.setText(
+            when (listMode) {
+                ListMode.REMEMBERED -> R.string.page_signatures_empty
+                ListMode.IGNORED -> R.string.ignored_page_signatures_empty
+            }
+        )
         binding.emptyView.visibility =
             if (list.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+    }
+
+    private enum class ListMode {
+        REMEMBERED,
+        IGNORED,
     }
 
     private class Adapter(

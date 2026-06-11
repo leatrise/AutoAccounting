@@ -30,7 +30,17 @@ object PageSignatureManager {
      * 获取所有已记住的页面签名
      */
     fun getAll(): List<PageSignature> {
-        val raw = PrefManager.pageSignatures
+        return parse(PrefManager.pageSignatures)
+    }
+
+    /**
+     * 获取所有不再询问的页面签名
+     */
+    fun getAllIgnored(): List<PageSignature> {
+        return parse(PrefManager.ignoredPageSignatures)
+    }
+
+    private fun parse(raw: String): List<PageSignature> {
         return runCatching {
             val arr = JSONArray(raw)
             (0 until arr.length()).mapNotNull { i ->
@@ -46,7 +56,19 @@ object PageSignatureManager {
         val list = getAll().toMutableList()
         list.removeAll { it.key() == sig.key() }
         list.add(sig)
-        save(list)
+        saveRemembered(list)
+        removeIgnored(sig.key())
+    }
+
+    /**
+     * 将页面加入不再询问列表
+     */
+    fun ignore(sig: PageSignature) {
+        val list = getAllIgnored().toMutableList()
+        list.removeAll { it.key() == sig.key() }
+        list.add(sig)
+        saveIgnored(list)
+        remove(sig.key())
     }
 
     /**
@@ -54,7 +76,15 @@ object PageSignatureManager {
      */
     fun remove(key: String) {
         val list = getAll().filter { it.key() != key }.toMutableList()
-        save(list)
+        saveRemembered(list)
+    }
+
+    /**
+     * 从不再询问列表移除指定 key
+     */
+    fun removeIgnored(key: String) {
+        val list = getAllIgnored().filter { it.key() != key }.toMutableList()
+        saveIgnored(list)
     }
 
     /**
@@ -65,16 +95,49 @@ object PageSignatureManager {
         packageName: String,
         activityName: String,
         structureFingerprint: String = "",
-    ): Boolean = getAll().any { sig ->
+    ): Boolean = matches(
+        getAll(),
+        packageName,
+        activityName,
+        structureFingerprint,
+    )
+
+    /**
+     * 当前页面是否已被标记为不再询问
+     */
+    fun isIgnored(
+        packageName: String,
+        activityName: String,
+        structureFingerprint: String = "",
+    ): Boolean = matches(
+        getAllIgnored(),
+        packageName,
+        activityName,
+        structureFingerprint,
+    )
+
+    private fun matches(
+        signatures: List<PageSignature>,
+        packageName: String,
+        activityName: String,
+        structureFingerprint: String,
+    ): Boolean = signatures.any { sig ->
         sig.packageName == packageName &&
                 sig.activityName == activityName &&
                 (sig.structureFingerprint.isBlank() || sig.structureFingerprint == structureFingerprint)
     }
 
-
-    private fun save(list: List<PageSignature>) {
+    private fun toJson(list: List<PageSignature>): String {
         val arr = JSONArray()
         list.forEach { arr.put(it.toJson()) }
-        PrefManager.pageSignatures = arr.toString()
+        return arr.toString()
+    }
+
+    private fun saveRemembered(list: List<PageSignature>) {
+        PrefManager.pageSignatures = toJson(list)
+    }
+
+    private fun saveIgnored(list: List<PageSignature>) {
+        PrefManager.ignoredPageSignatures = toJson(list)
     }
 }
