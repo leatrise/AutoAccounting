@@ -1,6 +1,7 @@
 val releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+val safeAppName = (readStringResource("app_name") ?: "app").replace(" ", "_")
 val hasReleaseSigning = listOf(
     releaseKeystorePath,
     releaseKeystorePassword,
@@ -83,9 +84,7 @@ android {
         versionName = "4.0.2(1602)-m1.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         flavorDimensions += "version"
-        setProperty("archivesBaseName", "app-${versionName}(${versionCode})")
-
-
+        setProperty("archivesBaseName", "$safeAppName-${versionName}(${versionCode})")
 
         ndk {
             abiFilters.add("arm64-v8a")
@@ -180,6 +179,26 @@ fun calculateVersionCode(): Int {
     } catch (_: Exception) {
         // Fallback keeps local/sandboxed builds usable even if .git metadata is unavailable.
         1
+    }
+}
+
+fun readStringResource(name: String): String? {
+    return try {
+        val stringsFile = file("src/main/res/values/strings.xml")
+        val document = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            .newDocumentBuilder()
+            .parse(stringsFile)
+        val nodes = document.getElementsByTagName("string")
+
+        for (i in 0 until nodes.length) {
+            val node = nodes.item(i)
+            if (node.attributes?.getNamedItem("name")?.nodeValue == name) {
+                return node.textContent.trim().ifBlank { null }
+            }
+        }
+        null
+    } catch (_: Exception) {
+        null
     }
 }
 
