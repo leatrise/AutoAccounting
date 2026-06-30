@@ -8,7 +8,7 @@
 - 我的仓库：`origin = https://github.com/leatrise/AutoAccounting.git`
 - 上游仓库：`upstream = https://github.com/AutoAccountingOrg/AutoAccounting.git`
 - 记录范围：`upstream/master...HEAD`
-- 当前二改提交数：`9`
+- 当前二改提交数：`16`
 
 建议在每次执行 `git fetch upstream` 后，先看这几个命令：
 
@@ -312,35 +312,7 @@ Rebase 时确认：
 - 如果上游也改了 `OcrService` 里的 `try/catch`、结果判定或 `ocrView` 调用，注意不要把失败路径误判成成功。
 - 如果后续上游引入了系统级 `performHapticFeedback` 或别的触感封装，需要重新决定是否继续保留当前 `Vibrator` 实现。
 
-## 后续追加模板
-
-以后每次你做完一个“明显偏离上游”的二改，可以在下面追加一段：
-
-```md
-### N. `<short-hash>` `<commit title>`
-
-目的：
-- 这里写这次二改想解决什么问题。
-
-涉及文件：
-- `path/to/file1`
-- `path/to/file2`
-
-关键点：
-- 这里写改动入口、配置 key、默认值、开关名、脚本名等。
-
-Rebase 时确认：
-- 上游如果改了什么，这次二改最可能在哪些点冲突。
-- 如果自动合并成功，还需要人工复查什么行为。
-```
-
-## 建议维护方式
-
-- 不要试图记录所有小修小补，只记录“和上游容易撞车”的改动。
-- 一条记录最好对应一个 commit；如果一个功能拆成多个 commit，可以在同一条里合并写最终状态。
-- `rebase` 完成后，如果某项二改已经被上游正式吸收，可以在对应条目后标记：`已被上游吸收，可删除本地补丁`。
-
-### 10. `working tree` `feat(ocr): 磁贴自动开启无障碍`
+### 10. `75da542` `feat(ocr): 磁贴自动开启无障碍`
 
 目的：
 - 保留原有 OCR 快捷磁贴，在点击时按配置决定是否自动尝试开启本应用无障碍服务。
@@ -382,5 +354,167 @@ Rebase 时确认：
 - 如果后续决定放弃 `WRITE_SECURE_SETTINGS` 方案，至少要保留“磁贴可配置是否自动尝试开启无障碍”的用户行为约定。
 
 特别注意：
-- 这一条当前默认为 `working tree`，后续提交后请把 hash 和标题替换成真实提交信息。
 - 这次改动横跨 `磁贴入口 -> Activity 透传 -> Service 权限检查 -> Secure Settings 写入 -> 设置页开关`，`rebase` 时很容易只合并到其中一半；需要按整条链路人工复查。
+
+### 11. `cd34456` `feat(service): 恢复被上游移除的翻转触发`
+
+目的：
+- 恢复上游移除的“翻转手机触发当前页面识别”能力。
+- 保留上游新增的“双击机身背部触发当前页面识别”能力。
+- 让翻转触发和双击背部触发共存，二者各自使用独立开关。
+
+涉及文件：
+- `app/src/main/java/net/ankio/auto/service/CoreService.kt`
+- `app/src/main/java/net/ankio/auto/service/FlipOcrTriggerService.kt`
+- `app/src/main/java/net/ankio/auto/service/OcrService.kt`
+- `app/src/main/java/net/ankio/auto/service/ocr/FlipDetector.kt`
+- `app/src/main/java/net/ankio/auto/ui/fragment/settings/InteractionPreferenceFragment.kt`
+- `app/src/main/java/net/ankio/auto/utils/PrefManager.kt`
+- `app/src/main/res/xml/settings_interaction.xml`
+- `app/src/main/res/values/strings.xml`
+- `app/src/main/res/values-zh/strings.xml`
+- `server/src/main/java/org/ezbook/server/constant/Setting.kt`
+- `server/src/main/java/org/ezbook/server/constant/DefaultData.kt`
+
+关键点：
+- 翻转触发恢复为独立子服务：`FlipOcrTriggerService`
+- 翻转检测逻辑恢复为：`FlipDetector`
+- `CoreService` 同时注册：
+  - `FlipOcrTriggerService`
+  - `BackTapOcrTriggerService`
+- 设置项拆成两个独立开关：
+  - `ocrFlipTrigger`
+  - `ocrBackTapTrigger`
+- 存储键拆成两个独立 key：
+  - `Setting.OCR_FLIP_TRIGGER = "ocr_flip_trigger"`
+  - `Setting.OCR_BACK_TAP_TRIGGER = "ocr_back_tap_trigger"`
+- 默认值均为开启：
+  - `DefaultData.OCR_FLIP_TRIGGER = true`
+  - `DefaultData.OCR_BACK_TAP_TRIGGER = true`
+- 两个触发方式最终都通过 `IntentType.OCR` 进入 `OcrService`，继续复用统一的锁屏、白名单、权限、并发和错误提示逻辑。
+
+Rebase 时确认：
+- 如果上游继续改动 `BackTapOcrTriggerService`、Columbus Tap 模型或传感器触发入口，不要把翻转触发再次覆盖掉。
+- 如果上游继续沿用 `ocr_flip_trigger` 表示双击背部触发，需要手动拆回两个 key，避免翻转和双击背部共用同一个偏好位。
+- 如果上游重构 `CoreService.initializeServices()`，确认两个子服务仍然都被注册，且 Xposed / LSPatch / OCR 模式下行为一致。
+- 如果上游改动 `OcrService` 的 OCR Intent 入口，确认翻转和双击背部仍然都走统一 OCR 流程，不要绕过白名单、锁屏、无障碍权限和 `ocrDoing` 防重入判断。
+- 如果上游改动设置页或 `PrefManager.SyncData`，确认两个开关的 XML key、`PrefManager` 字段、`Setting` 常量和 `DefaultData` 默认值仍一一对应。
+- 如果上游新增了触发方式开关的模式限制，保留当前约定：翻转触发和双击背部触发都只依赖 `CoreService` 是否运行，不再只限制为非 Xposed 模式。
+
+特别注意：
+- 这里不要继续沿用上游“把旧 `ocr_flip_trigger` 语义改成双击背部”的做法；本地约定是旧 key 留给翻转，新 key 给双击背部。
+- 这条提交和 `75da542` 的磁贴自动开启无障碍逻辑相互独立：磁贴是否自动开启无障碍只影响磁贴入口，不应该影响翻转/双击背部触发是否可用。
+- `cd34456` 提交里还包含版本号、IDE、测试产物或 Gradle include 之类的非核心变更时，后续 rebase 应优先按语义保留上述 OCR 触发逻辑，不要因为这些旁路文件冲突而误删触发服务。
+
+### 12. `2020478f` `feat(ocr/settings): 记住页面新增 不再询问。允许不再询问当前页面是否记住`
+
+目的：
+- 在 OCR 成功后的“记住此页面？”弹窗里加入“不再询问”行为。
+- 用户选择“不再询问”后，将当前页面签名写入独立忽略列表；之后同一页面不再弹出记住页面确认框。
+- 在页面管理页中同时管理“已记住”和“不再询问”两类页面。
+
+涉及文件：
+- `app/src/main/java/net/ankio/auto/service/OcrService.kt`
+- `app/src/main/java/net/ankio/auto/service/ocr/PageSignatureManager.kt`
+- `app/src/main/java/net/ankio/auto/ui/dialog/RememberPageDialog.kt`
+- `app/src/main/java/net/ankio/auto/ui/fragment/settings/PageSignaturesFragment.kt`
+- `app/src/main/java/net/ankio/auto/utils/PrefManager.kt`
+- `app/src/main/res/layout/fragment_page_signatures.xml`
+- `app/src/main/res/values/strings.xml`
+- `app/src/main/res/values-zh/strings.xml`
+- `server/src/main/java/org/ezbook/server/constant/Setting.kt`
+
+关键点：
+- 新增页面忽略列表设置：
+  - `Setting.IGNORED_PAGE_SIGNATURES = "setting_ignored_page_signatures"`
+  - `PrefManager.ignoredPageSignatures`
+- 忽略列表复用 `PageSignature` JSON 结构，与已记住页面使用同一套 key / 匹配语义。
+- `PageSignatureManager` 新增：
+  - `getAllIgnored()`
+  - `ignore(sig)`
+  - `removeIgnored(key)`
+  - `isIgnored(packageName, activityName, structureFingerprint)`
+- 已记住列表和忽略列表互斥：
+  - 记住页面时移除同 key 的忽略记录。
+  - 忽略页面时移除同 key 的已记住记录。
+- `OcrService.showRememberPageDialog(...)` 弹窗前同时检查已记住和已忽略页面。
+- `RememberPageDialog` 的负面按钮改为“不再询问”；按返回键或点弹窗外部仍只是关闭弹窗，不写入任何列表。
+- `PageSignaturesFragment` 在同一页面用顶部 `TabLayout` 切换：
+  - “已记住”读取 `PageSignatureManager.getAll()`
+  - “不再询问”读取 `PageSignatureManager.getAllIgnored()`
+  - 长按删除时分别调用 `remove(...)` 或 `removeIgnored(...)`
+
+Rebase 时确认：
+- 上游如果改了“记住页面”弹窗，负面按钮仍写入 ignored list，而不是退回普通取消。
+- 上游如果改了弹窗关闭行为，点击返回键和点击外部不会写入 remembered / ignored。
+- 上游如果改了 `PageSignature` 或 `PageSignatureManager.matches(...)`，确认 ignored list 使用同一套 key 和匹配规则。
+- 上游如果修复或重构结构指纹采集链路，确认 remembered 和 ignored 两套列表同步使用新的结构指纹。
+- 上游如果改了 `OcrService` 的 OCR 成功回调或 `showRememberPageDialog(...)` 调用条件，确认已忽略页面不会继续弹出确认框。
+- 上游如果改了页面管理页，确认同页双列表仍保留，且删除 ignored 记录后该页面会重新允许弹出询问。
+
+特别注意：
+- ignored list 的语义是“以后不再询问是否记住”，不是“禁止自动 OCR”。已记住页面的自动触发行为仍由 remembered list 决定。
+- 本条只记录“记住页面 / 不再询问 / 忽略列表”相关变更；提交中的版本号递增等旁路变更不在这里记录。
+
+### 13. `working tree` `feat(category): 分类规则记住标签`
+
+目的：
+- 让分类规则不仅记住账本、分类和备注，也能记住账单标签。
+- 用户在账单编辑弹窗中修改分类或标签并勾选“记住分类”后，自动生成/覆盖的分类规则会带上当前标签。
+- 手动编辑分类规则时，可以在规则结果里选择标签，后续命中该规则时同步回填到账单。
+
+涉及文件：
+- `app/src/main/java/net/ankio/auto/ui/dialog/components/ActionButtonsComponent.kt`
+- `app/src/main/java/net/ankio/auto/ui/fragment/components/CategoryRuleEditComponent.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/main/res/values-zh/strings.xml`
+- `server/src/main/java/org/ezbook/server/tools/BillService.kt`
+
+关键点：
+- 没有新增数据库表、字段、版本号或 migration。
+- 标签信息写入现有 `CategoryRuleModel.element` JSON 的结果项：
+  - `tags` 使用逗号分隔的标签名字符串。
+- 标签信息也写入现有 `CategoryRuleModel.js` 返回对象：
+  - `return { book, category, remark, tags }`
+- 服务端分类规则命中后，仅当返回结果里存在 `tags` 字段时，才更新 `BillInfoModel.tags`。
+- 旧分类规则没有 `tags` 字段时仍按原逻辑工作，不会强制清空账单标签。
+- 自动记住分类的触发条件从“分类变化”扩展为“分类或标签变化”。
+
+Rebase 时确认：
+- 上游如果改了 `CategoryRuleEditComponent.getRule()` 或分类规则 `element` JSON 结构，确认结果项仍包含 `tags`，且旧规则缺失 `tags` 时能正常回显为无标签。
+- 上游如果改了 `ActionButtonsComponent.rememberCategoryAuto()`，确认自动生成的 system 分类规则仍把当前 `billInfoModel.tags` 写入 `element` 和 `js`。
+- 上游如果改了 `BillService.categorize(...)` 或分类规则执行结果解析，确认只有规则返回 `tags` 时才覆盖 `bill.tags`，不要让旧规则误清空标签。
+- 上游如果调整了标签存储格式或 `BillInfoModel.getTagList()/setTagList()`，需要同步评估分类规则里逗号分隔字符串是否仍兼容。
+- 上游如果给分类规则新增正式字段或数据库迁移，要重新判断是否继续把标签放在 `element/js` 中，避免和上游结构重复表达。
+
+特别注意：
+- 这条是“写入已有字段的数据格式扩展”，不是数据库结构变更；后续 rebase 时不要误加 migration。
+- 已存在的旧分类规则不会自动批量补齐标签；只有重新编辑保存或自动记住分类覆盖后，规则记录才会包含 `tags`。
+
+## 后续追加模板
+
+以后每次你做完一个“明显偏离上游”的二改，可以在下面追加一段：
+
+```md
+### N. `<short-hash>` `<commit title>`
+
+目的：
+- 这里写这次二改想解决什么问题。
+
+涉及文件：
+- `path/to/file1`
+- `path/to/file2`
+
+关键点：
+- 这里写改动入口、配置 key、默认值、开关名、脚本名等。
+
+Rebase 时确认：
+- 上游如果改了什么，这次二改最可能在哪些点冲突。
+- 如果自动合并成功，还需要人工复查什么行为。
+```
+
+## 建议维护方式
+
+- 不要试图记录所有小修小补，只记录“和上游容易撞车”的改动。
+- 一条记录最好对应一个 commit；如果一个功能拆成多个 commit，可以在同一条里合并写最终状态。
+- `rebase` 完成后，如果某项二改已经被上游正式吸收，可以在对应条目后标记：`已被上游吸收，可删除本地补丁`。

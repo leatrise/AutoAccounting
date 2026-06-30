@@ -32,6 +32,7 @@ import net.ankio.auto.ui.dialog.BookSelectorDialog
 import net.ankio.auto.ui.dialog.BottomSheetDialogBuilder
 import net.ankio.auto.ui.dialog.CategorySelectorDialog
 import net.ankio.auto.ui.dialog.DateTimePickerDialog
+import net.ankio.auto.ui.dialog.TagSelectorDialog
 import net.ankio.auto.ui.api.BaseSheetDialog
 import net.ankio.auto.ui.utils.ListPopupUtilsGeneric
 import net.ankio.auto.ui.utils.ToastUtils
@@ -80,6 +81,9 @@ class CategoryRuleEditComponent(
 
     /** 备注信息 */
     private var remark: String = ""
+
+    /** 标签信息 */
+    private var tags: List<String> = emptyList()
 
     /**
      * 设置规则模型并重新渲染UI
@@ -151,14 +155,15 @@ class CategoryRuleEditComponent(
             "book" to bookName,
             "category" to category,
             "id" to remoteBookId,
-            "remark" to remark
+            "remark" to remark,
+            "tags" to tags.joinToString(",")
         )
         elementDataList.add(categoryData)
 
         // 生成完整的JavaScript规则
         val condition = conditionParts.joinToString("")
         val js =
-            "if($condition){ return { book:'$bookName',category:'$category',remark:'$remark'} }"
+            "if($condition){ return { book:'${escapeJsString(bookName)}',category:'${escapeJsString(category)}',remark:'${escapeJsString(remark)}',tags:'${escapeJsString(tags.joinToString(","))}'} }"
 
         // 更新规则模型
         categoryRuleModel.js = js
@@ -274,6 +279,17 @@ class CategoryRuleEditComponent(
         ) { elem, textview ->
             if (readOnly) return@appendWaveTextview
             onClickRemark(elem)
+        }
+
+        // 添加标签选择
+        flexboxLayout?.appendTextView(context.getString(R.string.condition_result_tag))
+        tags = parseTagString(lastElement.getOrDefault("tags", "").toString())
+        flexboxLayout?.appendWaveTextview(
+            text = formatTags(),
+            data = lastElement
+        ) { elem, textview ->
+            if (readOnly) return@appendWaveTextview
+            onClickTags(elem)
         }
     }
 
@@ -785,5 +801,43 @@ class CategoryRuleEditComponent(
             }
             .setNegativeButton(R.string.cancel_msg, null)
             .show(true)
+    }
+
+    /**
+     * 处理标签点击事件
+     */
+    private fun onClickTags(element: FlowElement) {
+        BaseSheetDialog.create<TagSelectorDialog>(context)
+            .setSelectedTags(tags)
+            .setCallback { selectedTags ->
+                tags = selectedTags
+                element.remove().setAsWaveTextview(formatTags(), element.connector) { elem, view ->
+                    if (readOnly) return@setAsWaveTextview
+                    onClickTags(elem)
+                }
+                Logger.d("设置标签: ${tags.joinToString(",")}")
+            }
+            .show(true)
+    }
+
+    private fun parseTagString(raw: String): List<String> {
+        if (raw.isBlank()) return emptyList()
+        return raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun formatTags(): String {
+        return if (tags.isEmpty()) {
+            context.getString(R.string.tag_empty)
+        } else {
+            tags.joinToString(",")
+        }
+    }
+
+    private fun escapeJsString(input: String): String {
+        return input
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
     }
 }

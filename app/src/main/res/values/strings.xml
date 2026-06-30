@@ -50,9 +50,11 @@
     <string name="condition_result_book">. Then book is</string>
     <string name="condition_result_category">. Category is</string>
     <string name="condition_result_remark">. Remark is</string>
+    <string name="condition_result_tag">. Tags are</string>
     <string name="remark_input">Enter remark</string>
     <string name="remark_hint">Remark content</string>
     <string name="remark_empty">No remark</string>
+    <string name="tag_empty">No tags</string>
     <string name="and">And</string>
     <string name="or">Or</string>
     <string name="type_money">Amount</string>

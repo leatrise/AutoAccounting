@@ -561,6 +561,9 @@ class BillService(
         bill.bookName = resolveBookByNameOrDefault(rawBookName).name
         bill.cateName = categoryJson.safeGetStringNonBlank("category", "其他")
         bill.remark = categoryJson.safeGetStringNonBlank("remark", "")
+        categoryJson?.takeIf { it.has("tags") }?.let {
+            bill.tags = it.safeGetString("tags", "")
+        }
         // AI分类识别需要总开关和分类开关同时开启
         if (!bill.hasValidCategory() &&
             SettingUtils.featureAiAvailable() &&

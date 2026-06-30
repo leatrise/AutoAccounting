@@ -61,6 +61,12 @@ class ActionButtonsComponent(
     /** 对话框打开时的分类名，用于检测用户是否手动修改了分类 */
     private var initialCateName: String = ""
 
+    /** 对话框打开时的标签，用于检测用户是否手动修改了标签 */
+    private var initialTags: String = ""
+
+    /** 是否已记录打开对话框时的账单状态 */
+    private var initialSnapshotCaptured: Boolean = false
+
     override fun onComponentCreate() {
         super.onComponentCreate()
         setupCheckboxes()
@@ -72,8 +78,10 @@ class ActionButtonsComponent(
      */
     fun setBillInfo(billInfoModel: BillInfoModel) {
         this.billInfoModel = billInfoModel
-        if (this.initialCateName.isEmpty()) {
+        if (!initialSnapshotCaptured) {
             this.initialCateName = billInfoModel.cateName
+            this.initialTags = billInfoModel.tags
+            this.initialSnapshotCaptured = true
         }
         refresh()
     }
@@ -131,8 +139,10 @@ class ActionButtonsComponent(
 
         binding.confirmButton.setOnClickListener {
             if (binding.checkboxRememberCategory.isChecked) {
-                // 仅当分类被用户明确修改，且当前账单不需要再自动分类时，才执行自动记忆
-                if (initialCateName != billInfoModel.cateName && !billInfoModel.needReCategory()) {
+                // 仅当分类或标签被用户明确修改，且当前账单不需要再自动分类时，才执行自动记忆
+                if ((initialCateName != billInfoModel.cateName || initialTags != billInfoModel.tags) &&
+                    !billInfoModel.needReCategory()
+                ) {
                     rememberCategoryAuto()
                 }
             }
@@ -241,7 +251,8 @@ class ActionButtonsComponent(
             mutableMapOf(
                 "book" to billInfoModel.bookName,
                 "category" to billInfoModel.cateName,
-                "id" to "-1"
+                "id" to "-1",
+                "tags" to billInfoModel.tags
             )
         )
         model.element = Gson().toJson(elements)
@@ -259,7 +270,7 @@ class ActionButtonsComponent(
             }
         }
         model.js =
-            "if(${cond}){ return { book:'${billInfoModel.bookName}',category:'${billInfoModel.cateName}'} }"
+            "if(${cond}){ return { book:'${escapeSingleQuotedJs(billInfoModel.bookName)}',category:'${escapeSingleQuotedJs(billInfoModel.cateName)}',tags:'${escapeSingleQuotedJs(billInfoModel.tags)}'} }"
 
         // 直接保存，由服务端去重
         App.launchIO {
@@ -302,6 +313,17 @@ class ActionButtonsComponent(
      */
     private fun escapeForJs(input: String): String {
         return input.replace("\\", "\\\\").replace("\"", "\\\"")
+    }
+
+    /**
+     * 转义 JS 单引号字符串中的特殊字符
+     */
+    private fun escapeSingleQuotedJs(input: String): String {
+        return input
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
     }
 
 }
