@@ -27,6 +27,7 @@ import net.ankio.auto.service.AnalysisUtils
 import net.ankio.auto.service.CoreService
 import net.ankio.auto.service.ocr.PageSignatureManager
 import net.ankio.auto.storage.Logger
+import net.ankio.auto.ui.activity.FloatingWindowTriggerActivity
 import net.ankio.auto.utils.PrefManager
 import net.ankio.auto.utils.Debounce
 import org.ezbook.server.intent.IntentType
@@ -168,6 +169,14 @@ class SelectToSpeakService : AccessibilityService() {
         event ?: return
         val pkg = event.packageName?.toString() ?: return
         if (!filterPkg(pkg)) return
+
+        // OCR 中转 Activity 不应覆盖触发前的应用和页面缓存。
+        if (pkg == packageName &&
+            event.className?.toString() == FloatingWindowTriggerActivity::class.java.name
+        ) {
+            Logger.d("[OcrTopApp] ignore OCR trigger activity event")
+            return
+        }
 
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {

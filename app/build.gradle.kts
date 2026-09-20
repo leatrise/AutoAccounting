@@ -81,7 +81,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = calculateVersionCode()
-        versionName = "4.0.2(6f976ca)-m1.8"
+        versionName = "4.0.2(6f976ca)-m1.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         flavorDimensions += "version"
         setProperty("archivesBaseName", "$safeAppName-${versionName}(${versionCode})")
