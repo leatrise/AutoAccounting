@@ -16,6 +16,7 @@
 package net.ankio.auto.ui.dialog.components
 
 import android.text.Editable
+import android.text.TextUtils.isEmpty
 import android.text.TextWatcher
 import android.view.View
 import net.ankio.auto.R
@@ -99,6 +100,20 @@ class BasicInfoComponent(
         // 更新备注
         binding.remark.setText(billInfoModel.remark)
 
+        // 显示识别到的商户和商品内容，空字段不显示
+        binding.chipShopName.text = billInfoModel.shopName
+        binding.chipShopName.visibility =
+            if (billInfoModel.shopName.isBlank()) View.GONE else View.VISIBLE
+        binding.chipShopItem.text = billInfoModel.shopItem
+        binding.chipShopItem.visibility =
+            if (billInfoModel.shopItem.isBlank()) View.GONE else View.VISIBLE
+        binding.remarkFieldsGroup.visibility =
+            if (billInfoModel.shopName.isBlank() && billInfoModel.shopItem.isBlank()) {
+                View.GONE
+            } else {
+                View.VISIBLE
+            }
+
         // 根据账单类型控制分类可见性
         binding.category.visibility = if (billType == BillType.Transfer) {
             View.GONE
@@ -166,6 +181,18 @@ class BasicInfoComponent(
      * 设置点击事件监听器
      */
     private fun setupClickListeners() {
+        listOf(binding.chipShopName, binding.chipShopItem).forEach { chip ->
+            chip.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked && ::billInfoModel.isInitialized && chip.text.isNotBlank()) {
+                    // TextWatcher 会将追加后的备注同步到账单模型
+                    if (!isEmpty(binding.remark.text))
+                        binding.remark.append("-")
+                    binding.remark.append(chip.text)
+                    binding.remark.setSelection(binding.remark.text?.length ?: 0)
+                }
+            }
+        }
+
         binding.category.setOnClickListener {
             launch {
                 val book = BookNameAPI.getBook(billInfoModel.bookName)

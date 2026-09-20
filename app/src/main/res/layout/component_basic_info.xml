@@ -102,6 +102,46 @@
                 android:inputType="textMultiLine|textCapSentences"
                 tools:text="备注信息" />
 
+            <!-- 商户与商品名称 -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/remark_fields_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:padding="@dimen/half_padding"
+                    app:chipSpacingHorizontal="@dimen/one_padding"
+                    app:singleLine="true"
+                    app:singleSelection="false">
+
+                    <!-- 商户信息 -->
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shop_name"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="商户名称"
+                        android:textSize="11sp"
+                        app:chipMinTouchTargetSize="0dp"
+                        app:chipStrokeWidth="0dp" />
+
+                    <!-- 商品信息 -->
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shop_item"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="商品名称"
+                        android:textSize="11sp"
+                        app:chipMinTouchTargetSize="0dp"
+                        app:chipStrokeWidth="0dp" />
+                </com.google.android.material.chip.ChipGroup>
+
+            </HorizontalScrollView>
+
         </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>
